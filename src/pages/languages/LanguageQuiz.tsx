@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { Brain, Play, Loader2 } from "lucide-react";
+import { Brain, Loader2, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
+import { useSearchParams } from "react-router-dom";
 import PageShell from "@/components/PageShell";
 import DoubtButton from "@/components/DoubtButton";
 import { fetchAI } from "@/lib/ai";
@@ -10,8 +10,9 @@ import { toast } from "sonner";
 
 interface QuizQ { question: string; options: string[]; correct: number; }
 
-const Quiz = () => {
-  const [topic, setTopic] = useState("");
+const LanguageQuiz = () => {
+  const [params] = useSearchParams();
+  const lang = params.get("lang") || "English";
   const [questions, setQuestions] = useState<QuizQ[]>([]);
   const [current, setCurrent] = useState(0);
   const [score, setScore] = useState(0);
@@ -20,7 +21,6 @@ const Quiz = () => {
   const [done, setDone] = useState(false);
 
   const startQuiz = async () => {
-    if (!topic.trim()) { toast.error("Enter a topic"); return; }
     setLoading(true);
     setDone(false);
     setCurrent(0);
@@ -28,11 +28,14 @@ const Quiz = () => {
     setAnswered(null);
     try {
       const content = await fetchAI(
-        [{ role: "user", content: `Generate 10 quiz questions about: ${topic}. Mix difficulty levels.` }],
+        [{ role: "user", content: `Generate 10 ${lang} language quiz questions. Mix vocabulary, grammar, and comprehension. Each with 4 options.` }],
         "quiz"
       );
-      setQuestions(JSON.parse(content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim()));
-    } catch { toast.error("Failed to generate quiz"); }
+      const cleaned = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+      setQuestions(JSON.parse(cleaned));
+    } catch {
+      toast.error("Failed to generate quiz. Try again.");
+    }
     setLoading(false);
   };
 
@@ -41,20 +44,24 @@ const Quiz = () => {
     setAnswered(idx);
     if (idx === questions[current].correct) setScore((s) => s + 1);
     setTimeout(() => {
-      if (current + 1 >= questions.length) setDone(true);
-      else { setCurrent((c) => c + 1); setAnswered(null); }
+      if (current + 1 >= questions.length) {
+        setDone(true);
+      } else {
+        setCurrent((c) => c + 1);
+        setAnswered(null);
+      }
     }, 800);
   };
 
   const q = questions[current];
 
   return (
-    <PageShell title="Quiz Challenge" subtitle="Test your knowledge on any topic" icon={<Brain className="w-7 h-7 text-foreground" />} gradientClass="from-yellow-500 to-amber-500">
+    <PageShell title={`${lang} Quiz`} subtitle="Test your knowledge" icon={<Brain className="w-7 h-7 text-foreground" />} gradientClass="from-yellow-500 to-amber-500">
       <div className="space-y-4">
         {questions.length === 0 && !loading && (
-          <div className="glass rounded-2xl p-6 space-y-4">
-            <Input placeholder="Enter study topic" value={topic} onChange={(e) => setTopic(e.target.value)} className="bg-muted/50 border-border/50 h-12 text-foreground placeholder:text-muted-foreground" />
-            <Button onClick={startQuiz} className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-bold neon-glow">
+          <div className="glass rounded-2xl p-8 text-center space-y-4">
+            <p className="text-foreground font-bold">Ready to test your {lang}?</p>
+            <Button onClick={startQuiz} className="bg-primary hover:bg-primary/90 text-primary-foreground neon-glow">
               <Play className="w-4 h-4 mr-2" /> Start Quiz
             </Button>
           </div>
@@ -63,14 +70,14 @@ const Quiz = () => {
         {loading && (
           <div className="glass rounded-2xl p-8 text-center">
             <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto" />
-            <p className="text-muted-foreground text-sm mt-3">Generating questions...</p>
+            <p className="text-muted-foreground text-sm mt-3">Generating fresh questions...</p>
           </div>
         )}
 
         {q && !done && !loading && (
           <>
             <div className="glass rounded-2xl p-4 flex justify-between text-xs text-muted-foreground">
-              <span>Q {current + 1}/{questions.length}</span>
+              <span>Question {current + 1}/{questions.length}</span>
               <span>Score: {score}</span>
             </div>
             <div className="glass rounded-2xl p-6">
@@ -94,7 +101,7 @@ const Quiz = () => {
           <div className="glass rounded-2xl p-8 text-center space-y-4">
             <p className="text-2xl font-black text-foreground">🏆 Quiz Complete!</p>
             <p className="text-foreground text-lg">Score: <span className="text-primary font-bold">{score}/{questions.length}</span></p>
-            <Button onClick={() => { setQuestions([]); setTopic(""); }} className="bg-primary hover:bg-primary/90 text-primary-foreground">New Quiz</Button>
+            <Button onClick={startQuiz} className="bg-primary hover:bg-primary/90 text-primary-foreground">New Quiz</Button>
           </div>
         )}
       </div>
@@ -103,4 +110,4 @@ const Quiz = () => {
   );
 };
 
-export default Quiz;
+export default LanguageQuiz;

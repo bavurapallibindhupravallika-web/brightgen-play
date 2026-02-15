@@ -1,9 +1,11 @@
-import { useState } from "react";
-import { MessageCircle, Send, Trash2 } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { MessageCircle, Send, Trash2, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import PageShell from "@/components/PageShell";
+import { streamChat } from "@/lib/ai";
+import { toast } from "sonner";
 
 interface Message {
   role: "user" | "assistant";
@@ -15,17 +17,49 @@ const AiChat = () => {
     { role: "assistant", content: "Hello! I'm your StudyFlix AI assistant. Ask me anything about Math, Science, History, Languages, Programming, or any subject!" }
   ]);
   const [input, setInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const handleSend = () => {
-    if (!input.trim()) return;
-    setMessages((prev) => [...prev, { role: "user", content: input }, { role: "assistant", content: "This is a demo response. Connect AI backend to enable real answers!" }]);
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const handleSend = async () => {
+    if (!input.trim() || isLoading) return;
+    const userMsg: Message = { role: "user", content: input };
+    setMessages((prev) => [...prev, userMsg]);
     setInput("");
+    setIsLoading(true);
+
+    let assistantSoFar = "";
+    const upsertAssistant = (chunk: string) => {
+      assistantSoFar += chunk;
+      setMessages((prev) => {
+        const last = prev[prev.length - 1];
+        if (last?.role === "assistant" && prev.length > 1 && prev[prev.length - 2]?.role === "user") {
+          return prev.map((m, i) => (i === prev.length - 1 ? { ...m, content: assistantSoFar } : m));
+        }
+        return [...prev, { role: "assistant", content: assistantSoFar }];
+      });
+    };
+
+    try {
+      await streamChat({
+        messages: [...messages, userMsg],
+        mode: "doubt",
+        onDelta: (chunk) => upsertAssistant(chunk),
+        onDone: () => setIsLoading(false),
+      });
+    } catch (e: any) {
+      setIsLoading(false);
+      toast.error(e.message || "Failed to get response");
+      setMessages((prev) => [...prev, { role: "assistant", content: "Sorry, I encountered an error. Please try again." }]);
+    }
   };
 
   return (
     <PageShell title="AI Assistant" subtitle="Ask any doubt, get instant help" icon={<MessageCircle className="w-7 h-7 text-foreground" />} gradientClass="from-emerald-500 to-teal-500">
       <div className="glass rounded-2xl flex flex-col" style={{ height: "60vh" }}>
-        {/* Messages */}
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
           <AnimatePresence>
             {messages.map((msg, i) => (
@@ -35,7 +69,7 @@ const AiChat = () => {
                 animate={{ opacity: 1, y: 0 }}
                 className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
               >
-                <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm ${
+                <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm whitespace-pre-wrap ${
                   msg.role === "user"
                     ? "bg-primary text-primary-foreground rounded-br-sm"
                     : "bg-muted text-foreground rounded-bl-sm"
@@ -45,9 +79,16 @@ const AiChat = () => {
               </motion.div>
             ))}
           </AnimatePresence>
+          {isLoading && messages[messages.length - 1]?.role === "user" && (
+            <div className="flex justify-start">
+              <div className="bg-muted rounded-2xl rounded-bl-sm px-4 py-3">
+                <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+              </div>
+            </div>
+          )}
+          <div ref={messagesEndRef} />
         </div>
 
-        {/* Input */}
         <div className="p-4 border-t border-border/30 flex gap-2">
           <Input
             value={input}
@@ -55,11 +96,12 @@ const AiChat = () => {
             onKeyDown={(e) => e.key === "Enter" && handleSend()}
             placeholder="Ask a question..."
             className="bg-muted/50 border-border/50 h-11 text-foreground placeholder:text-muted-foreground"
+            disabled={isLoading}
           />
-          <Button onClick={handleSend} className="h-11 w-11 p-0 bg-primary hover:bg-primary/90">
+          <Button onClick={handleSend} disabled={isLoading} className="h-11 w-11 p-0 bg-primary hover:bg-primary/90">
             <Send className="w-4 h-4" />
           </Button>
-          <Button onClick={() => setMessages([])} variant="outline" className="h-11 w-11 p-0 border-border/50 text-muted-foreground">
+          <Button onClick={() => setMessages([{ role: "assistant", content: "Chat cleared. Ask me anything!" }])} variant="outline" className="h-11 w-11 p-0 border-border/50 text-muted-foreground">
             <Trash2 className="w-4 h-4" />
           </Button>
         </div>
