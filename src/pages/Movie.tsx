@@ -1,52 +1,140 @@
 import { useState } from "react";
-import { Film, Upload, Sparkles, Download, HelpCircle } from "lucide-react";
+import { Film, Upload, Sparkles, Download, HelpCircle, Loader2, Brain, PenLine } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import PageShell from "@/components/PageShell";
+import DoubtButton from "@/components/DoubtButton";
+import { streamChat, fetchAI } from "@/lib/ai";
+import { toast } from "sonner";
 
 const Movie = () => {
-  const [movieName, setMovieName] = useState("");
   const [topic, setTopic] = useState("");
+  const [script, setScript] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [quizMode, setQuizMode] = useState<"none" | "quiz" | "written">("none");
+  const [quizData, setQuizData] = useState<any[]>([]);
+  const [quizAnswers, setQuizAnswers] = useState<Record<number, any>>({});
+  const [quizResults, setQuizResults] = useState<Record<number, boolean>>({});
+  const [quizLoading, setQuizLoading] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+
+  const generateScript = async () => {
+    if (!topic.trim()) { toast.error("Enter a topic"); return; }
+    setLoading(true);
+    setScript("");
+    let soFar = "";
+    try {
+      await streamChat({
+        messages: [{ role: "user", content: `Create a movie-style educational script about: ${topic}. Include characters, dialogue, meanings, and explanations.` }],
+        mode: "script",
+        onDelta: (chunk) => { soFar += chunk; setScript(soFar); },
+        onDone: () => setLoading(false),
+      });
+    } catch (e: any) {
+      setLoading(false);
+      toast.error(e.message || "Failed");
+    }
+  };
+
+  const loadQuiz = async (mode: "quiz" | "written") => {
+    setQuizMode(mode);
+    setQuizLoading(true);
+    setQuizAnswers({});
+    setQuizResults({});
+    setSubmitted(false);
+    try {
+      const content = await fetchAI(
+        [{ role: "user", content: `Generate ${mode === "quiz" ? "10 MCQ" : "5 short-answer"} questions about: ${topic}` }],
+        mode === "quiz" ? "quiz" : "written_test"
+      );
+      const cleaned = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+      setQuizData(JSON.parse(cleaned));
+    } catch {
+      toast.error("Failed to generate questions");
+    }
+    setQuizLoading(false);
+  };
+
+  const submitWritten = () => {
+    const res: Record<number, boolean> = {};
+    quizData.forEach((q: any, i: number) => { res[i] = (quizAnswers[i] || "").toLowerCase().trim() === q.answer.toLowerCase().trim(); });
+    setQuizResults(res);
+    setSubmitted(true);
+  };
 
   return (
     <PageShell title="Create Movie" subtitle="Turn any topic into a cinematic experience" icon={<Film className="w-7 h-7 text-foreground" />} gradientClass="from-red-500 to-orange-500">
       <div className="space-y-4">
         <div className="glass rounded-2xl p-6 space-y-4">
-          <Input placeholder="Movie Name" value={movieName} onChange={(e) => setMovieName(e.target.value)} className="bg-muted/50 border-border/50 h-12 text-foreground placeholder:text-muted-foreground" />
-          <Input placeholder="Study Topic" value={topic} onChange={(e) => setTopic(e.target.value)} className="bg-muted/50 border-border/50 h-12 text-foreground placeholder:text-muted-foreground" />
-          
-          <button className="w-full glass rounded-xl p-4 flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors border border-dashed border-border/50">
-            <Upload className="w-5 h-5" />
-            <span className="text-sm font-semibold">Upload PDFs or Images</span>
-          </button>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <Button className="h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-bold neon-glow">
-            <Sparkles className="w-4 h-4 mr-2" /> Generate Script
-          </Button>
-          <Button className="h-12 bg-secondary hover:bg-secondary/90 text-secondary-foreground font-bold">
-            <Film className="w-4 h-4 mr-2" /> Generate Video
+          <Input placeholder="Study Topic (e.g. Photosynthesis)" value={topic} onChange={(e) => setTopic(e.target.value)} className="bg-muted/50 border-border/50 h-12 text-foreground placeholder:text-muted-foreground" />
+          <Button onClick={generateScript} disabled={loading} className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-bold neon-glow">
+            {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Sparkles className="w-4 h-4 mr-2" />}
+            Generate Script
           </Button>
         </div>
 
-        {/* Video Player Placeholder */}
-        <div className="glass rounded-2xl aspect-video flex items-center justify-center">
-          <p className="text-muted-foreground text-sm">Video will appear here</p>
-        </div>
+        {script && (
+          <div className="glass rounded-2xl p-6 max-h-[50vh] overflow-y-auto">
+            <h3 className="text-foreground font-bold text-sm mb-3">📜 Movie Script</h3>
+            <div className="text-foreground text-sm whitespace-pre-wrap leading-relaxed">{script}</div>
+          </div>
+        )}
 
-        <div className="grid grid-cols-3 gap-3">
-          <Button variant="outline" className="h-10 text-xs border-border/50 text-muted-foreground hover:text-foreground">
-            <Download className="w-3 h-3 mr-1" /> Download
-          </Button>
-          <Button variant="outline" className="h-10 text-xs border-border/50 text-muted-foreground hover:text-foreground">
-            View Script
-          </Button>
-          <Button variant="outline" className="h-10 text-xs border-border/50 text-muted-foreground hover:text-foreground">
-            <HelpCircle className="w-3 h-3 mr-1" /> Doubt
-          </Button>
-        </div>
+        {topic && script && (
+          <div className="grid grid-cols-2 gap-3">
+            <Button onClick={() => loadQuiz("quiz")} variant="outline" className="h-10 text-xs border-border/50 text-muted-foreground hover:text-foreground">
+              <Brain className="w-3 h-3 mr-1" /> Quiz Test
+            </Button>
+            <Button onClick={() => loadQuiz("written")} variant="outline" className="h-10 text-xs border-border/50 text-muted-foreground hover:text-foreground">
+              <PenLine className="w-3 h-3 mr-1" /> Written Test
+            </Button>
+          </div>
+        )}
+
+        {quizLoading && (
+          <div className="glass rounded-2xl p-6 text-center">
+            <Loader2 className="w-6 h-6 animate-spin text-primary mx-auto" />
+          </div>
+        )}
+
+        {quizMode === "quiz" && quizData.length > 0 && !quizLoading && (
+          <div className="space-y-3">
+            {quizData.map((q: any, i: number) => (
+              <div key={i} className="glass rounded-2xl p-4 space-y-2">
+                <p className="text-foreground text-sm font-semibold">{q.question}</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {q.options?.map((opt: string, j: number) => (
+                    <button key={j} onClick={() => { setQuizAnswers((p) => ({ ...p, [i]: j })); setQuizResults((p) => ({ ...p, [i]: j === q.correct })); }}
+                      className={`text-xs py-2 px-3 rounded-lg font-semibold transition-all ${quizAnswers[i] === j ? (quizResults[i] ? "bg-green-500/30 text-green-300" : "bg-destructive/30 text-destructive") : "glass text-muted-foreground hover:text-foreground"}`}>
+                      {opt}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+            <p className="text-foreground text-center font-bold">Score: {Object.values(quizResults).filter(Boolean).length}/{quizData.length}</p>
+          </div>
+        )}
+
+        {quizMode === "written" && quizData.length > 0 && !quizLoading && (
+          <div className="space-y-3">
+            {quizData.map((q: any, i: number) => (
+              <div key={i} className="glass rounded-2xl p-4 space-y-2">
+                <p className="text-foreground text-sm font-semibold">Q{i + 1}. {q.question}</p>
+                <input value={quizAnswers[i] || ""} onChange={(e) => setQuizAnswers((p) => ({ ...p, [i]: e.target.value }))} disabled={submitted}
+                  className="w-full bg-muted/50 border border-border/50 rounded-lg px-3 py-2 text-foreground text-sm" placeholder="Type answer..." />
+                {submitted && <p className={`text-xs font-bold ${quizResults[i] ? "text-green-400" : "text-destructive"}`}>{quizResults[i] ? "✅ Correct!" : `❌ Answer: ${q.answer}`}</p>}
+              </div>
+            ))}
+            {!submitted ? (
+              <Button onClick={submitWritten} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold">Submit</Button>
+            ) : (
+              <p className="text-foreground text-center font-bold">Score: {Object.values(quizResults).filter(Boolean).length}/{quizData.length}</p>
+            )}
+          </div>
+        )}
       </div>
+      <DoubtButton />
     </PageShell>
   );
 };

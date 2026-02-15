@@ -1,7 +1,9 @@
 import { useState } from "react";
-import { Globe, BookOpen, MessageSquare, Brain, RotateCcw } from "lucide-react";
+import { Globe, BookOpen, MessageSquare, Brain, PenLine, HelpCircle } from "lucide-react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import PageShell from "@/components/PageShell";
+import DoubtButton from "@/components/DoubtButton";
 
 const languages = [
   "English", "Telugu", "Hindi", "Tamil", "Kannada", "Malayalam", "Marathi", "Bengali",
@@ -9,15 +11,15 @@ const languages = [
 ];
 
 const activities = [
-  { name: "Daily Words", icon: BookOpen, desc: "Learn new vocabulary" },
-  { name: "Daily Sentences", icon: MessageSquare, desc: "Practice sentence building" },
-  { name: "Conversation", icon: MessageSquare, desc: "Chat with AI tutor" },
-  { name: "Daily Quiz", icon: Brain, desc: "Test your progress" },
-  { name: "Review & Streak", icon: RotateCcw, desc: "Track your learning" },
+  { name: "Learn", icon: BookOpen, desc: "Vocabulary & grammar lessons", path: "learn" },
+  { name: "Practice", icon: MessageSquare, desc: "Interactive exercises", path: "practice" },
+  { name: "Quiz Test", icon: Brain, desc: "MCQ quiz with scoring", path: "quiz" },
+  { name: "Written Test", icon: PenLine, desc: "Type answers, AI checks", path: "written" },
 ];
 
 const Languages = () => {
   const [selected, setSelected] = useState("English");
+  const navigate = useNavigate();
 
   return (
     <PageShell title="Language Practice" subtitle="Daily practice in 16 languages" icon={<Globe className="w-7 h-7 text-foreground" />} gradientClass="from-blue-500 to-indigo-500">
@@ -42,12 +44,13 @@ const Languages = () => {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: i * 0.1 }}
               whileHover={{ scale: 1.02 }}
+              onClick={() => navigate(`/languages/${act.path}?lang=${encodeURIComponent(selected)}`)}
               className="w-full glass rounded-2xl p-5 flex items-center gap-4 text-left"
             >
               <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center">
                 <act.icon className="w-5 h-5 text-primary" />
               </div>
-              <div>
+              <div className="flex-1">
                 <h3 className="text-foreground font-bold text-sm">{act.name}</h3>
                 <p className="text-muted-foreground text-xs">{act.desc}</p>
               </div>
@@ -55,6 +58,7 @@ const Languages = () => {
           ))}
         </div>
       </div>
+      <DoubtButton />
     </PageShell>
   );
 };
