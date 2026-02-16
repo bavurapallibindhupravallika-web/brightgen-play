@@ -20,6 +20,10 @@ import WordPuzzle from "./pages/games/WordPuzzle";
 import MemoryMatch from "./pages/games/MemoryMatch";
 import SpeedQuiz from "./pages/games/SpeedQuiz";
 import SentenceBuilder from "./pages/games/SentenceBuilder";
+import BrainPuzzle from "./pages/games/BrainPuzzle";
+import CodeBuilder from "./pages/games/CodeBuilder";
+import BugFix from "./pages/games/BugFix";
+import OutputPredict from "./pages/games/OutputPredict";
 import LanguageLearn from "./pages/languages/LanguageLearn";
 import LanguageQuiz from "./pages/languages/LanguageQuiz";
 import LanguageWritten from "./pages/languages/LanguageWritten";
@@ -46,6 +50,10 @@ const App = () => (
           <Route path="/games/memory-match" element={<MemoryMatch />} />
           <Route path="/games/speed-quiz" element={<SpeedQuiz />} />
           <Route path="/games/sentence-builder" element={<SentenceBuilder />} />
+          <Route path="/games/brain-puzzle" element={<BrainPuzzle />} />
+          <Route path="/games/code-builder" element={<CodeBuilder />} />
+          <Route path="/games/bug-fix" element={<BugFix />} />
+          <Route path="/games/output-predict" element={<OutputPredict />} />
           <Route path="/languages" element={<Languages />} />
           <Route path="/languages/learn" element={<LanguageLearn />} />
           <Route path="/languages/quiz" element={<LanguageQuiz />} />

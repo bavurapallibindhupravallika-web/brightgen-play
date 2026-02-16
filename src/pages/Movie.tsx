@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Film, Upload, Sparkles, Download, HelpCircle, Loader2, Brain, PenLine } from "lucide-react";
+import { Film, Upload, Sparkles, Download, Loader2, Brain, PenLine, Globe, Play, FileText, Image } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import PageShell from "@/components/PageShell";
@@ -7,10 +7,15 @@ import DoubtButton from "@/components/DoubtButton";
 import { streamChat, fetchAI } from "@/lib/ai";
 import { toast } from "sonner";
 
+const movieTypes = ["Action", "Love", "Educational", "Thriller", "Motivation", "Comedy", "Sci-Fi", "Horror"];
+const allLanguages = ["English", "Telugu", "Hindi", "Tamil", "Kannada", "Malayalam", "Marathi", "Bengali", "Spanish", "French", "German", "Japanese", "Korean", "Chinese", "Arabic", "Russian"];
+
 const Movie = () => {
   const [topic, setTopic] = useState("");
   const [script, setScript] = useState("");
   const [loading, setLoading] = useState(false);
+  const [movieType, setMovieType] = useState("Educational");
+  const [language, setLanguage] = useState("English");
   const [quizMode, setQuizMode] = useState<"none" | "quiz" | "written">("none");
   const [quizData, setQuizData] = useState<any[]>([]);
   const [quizAnswers, setQuizAnswers] = useState<Record<number, any>>({});
@@ -25,7 +30,7 @@ const Movie = () => {
     let soFar = "";
     try {
       await streamChat({
-        messages: [{ role: "user", content: `Create a movie-style educational script about: ${topic}. Include characters, dialogue, meanings, and explanations.` }],
+        messages: [{ role: "user", content: `Create a ${movieType} movie-style educational script about: ${topic} in ${language} language. Include characters, dialogue, meanings, explanations, and educational content. Make it cinematic and engaging.` }],
         mode: "script",
         onDelta: (chunk) => { soFar += chunk; setScript(soFar); },
         onDone: () => setLoading(false),
@@ -44,7 +49,7 @@ const Movie = () => {
     setSubmitted(false);
     try {
       const content = await fetchAI(
-        [{ role: "user", content: `Generate ${mode === "quiz" ? "10 MCQ" : "5 short-answer"} questions about: ${topic}` }],
+        [{ role: "user", content: `Generate ${mode === "quiz" ? "10 MCQ" : "5 short-answer"} questions about: ${topic} in ${language}` }],
         mode === "quiz" ? "quiz" : "written_test"
       );
       const cleaned = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
@@ -62,22 +67,81 @@ const Movie = () => {
     setSubmitted(true);
   };
 
+  const handleDownload = () => {
+    if (!script) return;
+    const blob = new Blob([script], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${topic || "movie"}-script.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("Script downloaded!");
+  };
+
   return (
     <PageShell title="Create Movie" subtitle="Turn any topic into a cinematic experience" icon={<Film className="w-7 h-7 text-foreground" />} gradientClass="from-red-500 to-orange-500">
       <div className="space-y-4">
         <div className="glass rounded-2xl p-6 space-y-4">
-          <Input placeholder="Study Topic (e.g. Photosynthesis)" value={topic} onChange={(e) => setTopic(e.target.value)} className="bg-muted/50 border-border/50 h-12 text-foreground placeholder:text-muted-foreground" />
+          {/* Language Selector */}
+          <div>
+            <label className="text-xs font-semibold text-muted-foreground mb-2 block">🌍 Language</label>
+            <div className="grid grid-cols-4 gap-2">
+              {allLanguages.slice(0, 8).map((lang) => (
+                <button key={lang} onClick={() => setLanguage(lang)}
+                  className={`text-[10px] font-semibold py-1.5 px-1 rounded-lg transition-all ${language === lang ? "bg-primary text-primary-foreground neon-glow" : "glass text-muted-foreground hover:text-foreground"}`}>
+                  {lang}
+                </button>
+              ))}
+            </div>
+            <div className="grid grid-cols-4 gap-2 mt-2">
+              {allLanguages.slice(8).map((lang) => (
+                <button key={lang} onClick={() => setLanguage(lang)}
+                  className={`text-[10px] font-semibold py-1.5 px-1 rounded-lg transition-all ${language === lang ? "bg-primary text-primary-foreground neon-glow" : "glass text-muted-foreground hover:text-foreground"}`}>
+                  {lang}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Movie Type */}
+          <div>
+            <label className="text-xs font-semibold text-muted-foreground mb-2 block">🎬 Movie Type</label>
+            <div className="grid grid-cols-4 gap-2">
+              {movieTypes.map((type) => (
+                <button key={type} onClick={() => setMovieType(type)}
+                  className={`text-[10px] font-semibold py-1.5 px-2 rounded-lg transition-all ${movieType === type ? "bg-primary text-primary-foreground neon-glow" : "glass text-muted-foreground hover:text-foreground"}`}>
+                  {type}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <Input placeholder="Study Topic (e.g. Photosynthesis, Gravity, History)" value={topic} onChange={(e) => setTopic(e.target.value)} className="bg-muted/50 border-border/50 h-12 text-foreground placeholder:text-muted-foreground" />
+
           <Button onClick={generateScript} disabled={loading} className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-bold neon-glow">
             {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Sparkles className="w-4 h-4 mr-2" />}
-            Generate Script
+            Generate Movie Script
           </Button>
         </div>
 
         {script && (
-          <div className="glass rounded-2xl p-6 max-h-[50vh] overflow-y-auto">
-            <h3 className="text-foreground font-bold text-sm mb-3">📜 Movie Script</h3>
-            <div className="text-foreground text-sm whitespace-pre-wrap leading-relaxed">{script}</div>
-          </div>
+          <>
+            <div className="glass rounded-2xl p-6 max-h-[50vh] overflow-y-auto">
+              <h3 className="text-foreground font-bold text-sm mb-3">📜 Movie Script ({language})</h3>
+              <div className="text-foreground text-sm whitespace-pre-wrap leading-relaxed">{script}</div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="grid grid-cols-2 gap-3">
+              <Button onClick={handleDownload} variant="outline" className="h-10 text-xs border-border/50 text-muted-foreground hover:text-foreground">
+                <Download className="w-3 h-3 mr-1" /> Download Script
+              </Button>
+              <Button onClick={() => { toast.success("Script saved!"); }} variant="outline" className="h-10 text-xs border-border/50 text-muted-foreground hover:text-foreground">
+                <FileText className="w-3 h-3 mr-1" /> Save Script
+              </Button>
+            </div>
+          </>
         )}
 
         {topic && script && (
