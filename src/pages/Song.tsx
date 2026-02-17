@@ -1,10 +1,13 @@
 import { useState } from "react";
-import { Music, Sparkles, Loader2, Brain, PenLine, Download, FileText } from "lucide-react";
+import { Music, Sparkles, Loader2, Brain, PenLine, Download, Save } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import PageShell from "@/components/PageShell";
 import DoubtButton from "@/components/DoubtButton";
+import InstructionsBlock from "@/components/InstructionsBlock";
 import { streamChat, fetchAI } from "@/lib/ai";
+import { useSaveContent } from "@/hooks/useSaveContent";
+import { useDailyLimit } from "@/hooks/useDailyLimit";
 import { toast } from "sonner";
 
 const songTypes = ["Motivation", "Educational", "Rap", "Melody", "Pop", "Classical", "Rock", "Folk"];
@@ -26,11 +29,14 @@ const Song = () => {
   const [writtenLoading, setWrittenLoading] = useState(false);
   const [writtenSubmitted, setWrittenSubmitted] = useState(false);
 
+  const { saveContent } = useSaveContent();
+  const { checkAndUse, remaining, isVip } = useDailyLimit();
+
   const generateLyrics = async () => {
     if (!topic.trim()) { toast.error("Enter a topic"); return; }
-    setLoading(true);
-    setLyrics("");
-    let soFar = "";
+    const allowed = await checkAndUse();
+    if (!allowed) return;
+    setLoading(true); setLyrics(""); let soFar = "";
     try {
       await streamChat({
         messages: [{ role: "user", content: `Create a ${songType} educational song lyrics about: ${topic} in ${language} language. Include verses, chorus, meaning explanations for each section, and educational content.` }],
@@ -38,36 +44,22 @@ const Song = () => {
         onDelta: (chunk) => { soFar += chunk; setLyrics(soFar); },
         onDone: () => setLoading(false),
       });
-    } catch (e: any) {
-      setLoading(false);
-      toast.error(e.message || "Failed");
-    }
+    } catch (e: any) { setLoading(false); toast.error(e.message || "Failed"); }
   };
 
   const loadQuiz = async () => {
-    setQuizLoading(true);
-    setQuizAnswers({});
-    setQuizResults({});
+    setQuizLoading(true); setQuizAnswers({}); setQuizResults({});
     try {
-      const content = await fetchAI(
-        [{ role: "user", content: `Generate 10 MCQ questions about: ${topic} in ${language}` }],
-        "quiz"
-      );
+      const content = await fetchAI([{ role: "user", content: `Generate 10 MCQ questions about: ${topic} in ${language}` }], "quiz");
       setQuizData(JSON.parse(content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim()));
     } catch { toast.error("Failed"); }
     setQuizLoading(false);
   };
 
   const loadWritten = async () => {
-    setWrittenLoading(true);
-    setWrittenAnswers({});
-    setWrittenResults({});
-    setWrittenSubmitted(false);
+    setWrittenLoading(true); setWrittenAnswers({}); setWrittenResults({}); setWrittenSubmitted(false);
     try {
-      const content = await fetchAI(
-        [{ role: "user", content: `Generate 5 short-answer questions about: ${topic} in ${language}` }],
-        "written_test"
-      );
+      const content = await fetchAI([{ role: "user", content: `Generate 5 short-answer questions about: ${topic} in ${language}` }], "written_test");
       setWrittenData(JSON.parse(content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim()));
     } catch { toast.error("Failed"); }
     setWrittenLoading(false);
@@ -76,56 +68,51 @@ const Song = () => {
   const submitWritten = () => {
     const res: Record<number, boolean> = {};
     writtenData.forEach((q: any, i: number) => { res[i] = (writtenAnswers[i] || "").toLowerCase().trim() === q.answer.toLowerCase().trim(); });
-    setWrittenResults(res);
-    setWrittenSubmitted(true);
+    setWrittenResults(res); setWrittenSubmitted(true);
   };
 
   const handleDownload = () => {
     if (!lyrics) return;
     const blob = new Blob([lyrics], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${topic || "song"}-lyrics.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.success("Lyrics downloaded!");
+    const a = document.createElement("a"); a.href = url; a.download = `${topic || "song"}-lyrics.txt`; a.click();
+    URL.revokeObjectURL(url); toast.success("Lyrics downloaded!");
+  };
+
+  const handleSave = () => {
+    saveContent({ content_type: "song", title: `${songType} - ${topic}`, topic, language, content_text: lyrics });
   };
 
   return (
     <PageShell title="Create Song" subtitle="Transform topics into catchy songs" icon={<Music className="w-7 h-7 text-foreground" />} gradientClass="from-pink-500 to-purple-500">
       <div className="space-y-4">
+        <div className="glass rounded-2xl p-3 flex items-center justify-between">
+          <p className="text-xs text-muted-foreground">{isVip ? "💎 VIP – Unlimited" : `⚡ Free – ${remaining()} left today`}</p>
+          {!isVip && <a href="/vip" className="text-xs font-bold text-primary hover:underline">Upgrade VIP</a>}
+        </div>
+
+        <InstructionsBlock type="song" />
+
         <div className="glass rounded-2xl p-6 space-y-4">
-          {/* Language */}
           <div>
             <label className="text-xs font-semibold text-muted-foreground mb-2 block">🌍 Language</label>
             <div className="grid grid-cols-4 gap-2">
               {allLanguages.slice(0, 8).map((lang) => (
-                <button key={lang} onClick={() => setLanguage(lang)}
-                  className={`text-[10px] font-semibold py-1.5 px-1 rounded-lg transition-all ${language === lang ? "bg-primary text-primary-foreground neon-glow" : "glass text-muted-foreground hover:text-foreground"}`}>
-                  {lang}
-                </button>
+                <button key={lang} onClick={() => setLanguage(lang)} className={`text-[10px] font-semibold py-1.5 px-1 rounded-lg transition-all ${language === lang ? "bg-primary text-primary-foreground neon-glow" : "glass text-muted-foreground hover:text-foreground"}`}>{lang}</button>
               ))}
             </div>
             <div className="grid grid-cols-4 gap-2 mt-2">
               {allLanguages.slice(8).map((lang) => (
-                <button key={lang} onClick={() => setLanguage(lang)}
-                  className={`text-[10px] font-semibold py-1.5 px-1 rounded-lg transition-all ${language === lang ? "bg-primary text-primary-foreground neon-glow" : "glass text-muted-foreground hover:text-foreground"}`}>
-                  {lang}
-                </button>
+                <button key={lang} onClick={() => setLanguage(lang)} className={`text-[10px] font-semibold py-1.5 px-1 rounded-lg transition-all ${language === lang ? "bg-primary text-primary-foreground neon-glow" : "glass text-muted-foreground hover:text-foreground"}`}>{lang}</button>
               ))}
             </div>
           </div>
 
-          {/* Song Type */}
           <div>
             <label className="text-xs font-semibold text-muted-foreground mb-2 block">🎵 Song Type</label>
             <div className="grid grid-cols-4 gap-2">
               {songTypes.map((type) => (
-                <button key={type} onClick={() => setSongType(type)}
-                  className={`text-[10px] font-semibold py-1.5 px-2 rounded-lg transition-all ${songType === type ? "bg-primary text-primary-foreground neon-glow" : "glass text-muted-foreground hover:text-foreground"}`}>
-                  {type}
-                </button>
+                <button key={type} onClick={() => setSongType(type)} className={`text-[10px] font-semibold py-1.5 px-2 rounded-lg transition-all ${songType === type ? "bg-primary text-primary-foreground neon-glow" : "glass text-muted-foreground hover:text-foreground"}`}>{type}</button>
               ))}
             </div>
           </div>
@@ -144,12 +131,8 @@ const Song = () => {
               <div className="text-foreground text-sm whitespace-pre-wrap leading-relaxed">{lyrics}</div>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <Button onClick={handleDownload} variant="outline" className="h-10 text-xs border-border/50 text-muted-foreground hover:text-foreground">
-                <Download className="w-3 h-3 mr-1" /> Download Lyrics
-              </Button>
-              <Button onClick={() => toast.success("Song saved!")} variant="outline" className="h-10 text-xs border-border/50 text-muted-foreground hover:text-foreground">
-                <FileText className="w-3 h-3 mr-1" /> Save Song
-              </Button>
+              <Button onClick={handleDownload} variant="outline" className="h-10 text-xs border-border/50 text-muted-foreground hover:text-foreground"><Download className="w-3 h-3 mr-1" /> Download</Button>
+              <Button onClick={handleSave} variant="outline" className="h-10 text-xs border-border/50 text-muted-foreground hover:text-foreground"><Save className="w-3 h-3 mr-1" /> Save</Button>
             </div>
           </>
         )}
@@ -174,9 +157,7 @@ const Song = () => {
                 <div className="grid grid-cols-2 gap-2">
                   {q.options?.map((opt: string, j: number) => (
                     <button key={j} onClick={() => { setQuizAnswers((p) => ({ ...p, [i]: j })); setQuizResults((p) => ({ ...p, [i]: j === q.correct })); }}
-                      className={`text-xs py-2 px-3 rounded-lg font-semibold transition-all ${quizAnswers[i] === j ? (quizResults[i] ? "bg-green-500/30 text-green-300" : "bg-destructive/30 text-destructive") : "glass text-muted-foreground hover:text-foreground"}`}>
-                      {opt}
-                    </button>
+                      className={`text-xs py-2 px-3 rounded-lg font-semibold transition-all ${quizAnswers[i] === j ? (quizResults[i] ? "bg-green-500/30 text-green-300" : "bg-destructive/30 text-destructive") : "glass text-muted-foreground hover:text-foreground"}`}>{opt}</button>
                   ))}
                 </div>
               </div>
