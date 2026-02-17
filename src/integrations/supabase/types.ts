@@ -14,7 +14,188 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      chat_conversations: {
+        Row: {
+          created_at: string
+          id: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      chat_messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string
+          id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          role: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "chat_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      game_progress: {
+        Row: {
+          badges: string[] | null
+          created_at: string
+          current_level: number
+          game_name: string
+          high_score: number
+          id: string
+          lives: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          badges?: string[] | null
+          created_at?: string
+          current_level?: number
+          game_name: string
+          high_score?: number
+          id?: string
+          lives?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          badges?: string[] | null
+          created_at?: string
+          current_level?: number
+          game_name?: string
+          high_score?: number
+          id?: string
+          lives?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          daily_usage_count: number
+          daily_usage_date: string
+          id: string
+          level: number
+          phone: string | null
+          points: number
+          streak: number
+          updated_at: string
+          user_id: string
+          username: string | null
+          vip_expires_at: string | null
+          vip_status: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          daily_usage_count?: number
+          daily_usage_date?: string
+          id?: string
+          level?: number
+          phone?: string | null
+          points?: number
+          streak?: number
+          updated_at?: string
+          user_id: string
+          username?: string | null
+          vip_expires_at?: string | null
+          vip_status?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          daily_usage_count?: number
+          daily_usage_date?: string
+          id?: string
+          level?: number
+          phone?: string | null
+          points?: number
+          streak?: number
+          updated_at?: string
+          user_id?: string
+          username?: string | null
+          vip_expires_at?: string | null
+          vip_status?: string
+        }
+        Relationships: []
+      }
+      saved_content: {
+        Row: {
+          content_text: string | null
+          content_type: string
+          created_at: string
+          id: string
+          language: string | null
+          media_type: string | null
+          title: string
+          topic: string | null
+          user_id: string
+        }
+        Insert: {
+          content_text?: string | null
+          content_type: string
+          created_at?: string
+          id?: string
+          language?: string | null
+          media_type?: string | null
+          title: string
+          topic?: string | null
+          user_id: string
+        }
+        Update: {
+          content_text?: string | null
+          content_type?: string
+          created_at?: string
+          id?: string
+          language?: string | null
+          media_type?: string | null
+          title?: string
+          topic?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
