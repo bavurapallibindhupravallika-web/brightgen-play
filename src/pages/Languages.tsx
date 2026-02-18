@@ -6,8 +6,12 @@ import PageShell from "@/components/PageShell";
 import DoubtButton from "@/components/DoubtButton";
 
 const languages = [
-  "English", "Telugu", "Hindi", "Tamil", "Kannada", "Malayalam", "Marathi", "Bengali",
-  "Gujarati", "Punjabi", "Spanish", "French", "German", "Japanese", "Korean", "Chinese"
+  { label: "English", flag: "🇺🇸" },
+  { label: "Telugu", flag: "🇮🇳" },
+  { label: "Hindi", flag: "🇮🇳" },
+  { label: "Tamil", flag: "🇮🇳" },
+  { label: "Kannada", flag: "🇮🇳" },
+  { label: "Bengali", flag: "🇮🇳" },
 ];
 
 const activities = [
@@ -18,7 +22,7 @@ const activities = [
 ];
 
 const Languages = () => {
-  const [selected, setSelected] = useState("English");
+  const [selected, setSelected] = useState(languages[0].label);
   const navigate = useNavigate();
 
   return (
@@ -26,11 +30,11 @@ const Languages = () => {
       <div className="space-y-4">
         <div className="glass rounded-2xl p-4">
           <h3 className="text-foreground font-bold text-sm mb-3">Select Language</h3>
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             {languages.map((lang) => (
-              <button key={lang} onClick={() => setSelected(lang)}
-                className={`text-[10px] font-semibold py-2 px-1 rounded-lg transition-all ${selected === lang ? "bg-primary text-primary-foreground neon-glow" : "glass text-muted-foreground hover:text-foreground"}`}>
-                {lang}
+              <button key={lang.label} onClick={() => setSelected(lang.label)}
+                className={`text-[11px] font-semibold py-2.5 px-2 rounded-lg transition-all flex items-center justify-center gap-1.5 ${selected === lang.label ? "bg-primary text-primary-foreground neon-glow" : "glass text-muted-foreground hover:text-foreground"}`}>
+                <span>{lang.flag}</span> {lang.label}
               </button>
             ))}
           </div>
