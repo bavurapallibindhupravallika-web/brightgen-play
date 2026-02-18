@@ -11,7 +11,14 @@ import { useDailyLimit } from "@/hooks/useDailyLimit";
 import { toast } from "sonner";
 
 const movieTypes = ["Action", "Love", "Educational", "Thriller", "Motivation", "Comedy", "Sci-Fi", "Horror"];
-const allLanguages = ["English", "Telugu", "Hindi", "Tamil", "Kannada", "Malayalam", "Marathi", "Bengali", "Spanish", "French", "German", "Japanese", "Korean", "Chinese", "Arabic", "Russian"];
+const allLanguages = [
+  { label: "English", flag: "🇺🇸" },
+  { label: "Telugu", flag: "🇮🇳" },
+  { label: "Hindi", flag: "🇮🇳" },
+  { label: "Tamil", flag: "🇮🇳" },
+  { label: "Kannada", flag: "🇮🇳" },
+  { label: "Bengali", flag: "🇮🇳" },
+];
 
 const Movie = () => {
   const [topic, setTopic] = useState("");
@@ -102,16 +109,12 @@ const Movie = () => {
         <div className="glass rounded-2xl p-6 space-y-4">
           <div>
             <label className="text-xs font-semibold text-muted-foreground mb-2 block">🌍 Language</label>
-            <div className="grid grid-cols-4 gap-2">
-              {allLanguages.slice(0, 8).map((lang) => (
-                <button key={lang} onClick={() => setLanguage(lang)}
-                  className={`text-[10px] font-semibold py-1.5 px-1 rounded-lg transition-all ${language === lang ? "bg-primary text-primary-foreground neon-glow" : "glass text-muted-foreground hover:text-foreground"}`}>{lang}</button>
-              ))}
-            </div>
-            <div className="grid grid-cols-4 gap-2 mt-2">
-              {allLanguages.slice(8).map((lang) => (
-                <button key={lang} onClick={() => setLanguage(lang)}
-                  className={`text-[10px] font-semibold py-1.5 px-1 rounded-lg transition-all ${language === lang ? "bg-primary text-primary-foreground neon-glow" : "glass text-muted-foreground hover:text-foreground"}`}>{lang}</button>
+            <div className="grid grid-cols-3 gap-2">
+              {allLanguages.map((lang) => (
+                <button key={lang.label} onClick={() => setLanguage(lang.label)}
+                  className={`text-[11px] font-semibold py-2 px-2 rounded-lg transition-all flex items-center justify-center gap-1 ${language === lang.label ? "bg-primary text-primary-foreground neon-glow" : "glass text-muted-foreground hover:text-foreground"}`}>
+                  <span>{lang.flag}</span> {lang.label}
+                </button>
               ))}
             </div>
           </div>

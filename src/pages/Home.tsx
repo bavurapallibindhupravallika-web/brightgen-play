@@ -9,16 +9,18 @@ import { useAuth } from "@/hooks/useAuth";
 import { useDailyLimit } from "@/hooks/useDailyLimit";
 
 const categories = [
-  { name: "Movie", icon: Film, color: "from-red-500 to-orange-500", path: "/movie" },
-  { name: "Song", icon: Music, color: "from-pink-500 to-purple-500", path: "/song" },
-  { name: "Animated", icon: Palette, color: "from-cyan-500 to-blue-500", path: "/animated" },
-  { name: "Quiz", icon: Brain, color: "from-yellow-500 to-amber-500", path: "/quiz" },
-  { name: "AI Chat", icon: MessageCircle, color: "from-emerald-500 to-teal-500", path: "/ai-chat" },
-  { name: "Games", icon: Gamepad2, color: "from-violet-500 to-purple-600", path: "/games" },
-  { name: "Languages", icon: Globe, color: "from-blue-500 to-indigo-500", path: "/languages" },
-  { name: "Saved", icon: Save, color: "from-amber-500 to-orange-500", path: "/saved" },
-  { name: "VIP", icon: Crown, color: "from-yellow-400 to-amber-500", path: "/vip" },
-  { name: "Settings", icon: Settings, color: "from-slate-400 to-slate-600", path: "/settings" },
+  { name: "🎬 Movies", icon: Film, color: "from-red-500 to-orange-500", path: "/movie" },
+  { name: "🎵 Songs", icon: Music, color: "from-pink-500 to-purple-500", path: "/song" },
+  { name: "🎞 Animated", icon: Palette, color: "from-cyan-500 to-blue-500", path: "/animated" },
+  { name: "🧠 Quiz", icon: Brain, color: "from-yellow-500 to-amber-500", path: "/quiz" },
+  { name: "🤖 AI Chat", icon: MessageCircle, color: "from-emerald-500 to-teal-500", path: "/ai-chat" },
+  { name: "🎮 Games", icon: Gamepad2, color: "from-violet-500 to-purple-600", path: "/games" },
+  { name: "🌐 Languages", icon: Globe, color: "from-blue-500 to-indigo-500", path: "/languages" },
+  { name: "💾 Saved", icon: Save, color: "from-amber-500 to-orange-500", path: "/saved" },
+  { name: "👤 Profile", icon: User, color: "from-indigo-500 to-purple-500", path: "/profile" },
+  { name: "🏆 Leaderboard", icon: Trophy, color: "from-yellow-500 to-orange-500", path: "/leaderboard" },
+  { name: "👑 VIP", icon: Crown, color: "from-yellow-400 to-amber-500", path: "/vip" },
+  { name: "⚙ Settings", icon: Settings, color: "from-slate-400 to-slate-600", path: "/settings" },
 ];
 
 const Home = () => {
