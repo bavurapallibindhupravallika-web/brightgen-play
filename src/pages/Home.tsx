@@ -1,10 +1,11 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
-  Film, Music, Palette, Brain, MessageCircle, Gamepad2, Globe, Settings,
-  Trophy, Star, Flame, User, Home as HomeIcon, LogOut, Save, Crown
+  Film, Music, Palette, Brain, Globe, Settings,
+  Trophy, Star, Flame, User, Crown
 } from "lucide-react";
 import FloatingParticles from "@/components/FloatingParticles";
+import BottomNav from "@/components/BottomNav";
 import { useAuth } from "@/hooks/useAuth";
 import { useDailyLimit } from "@/hooks/useDailyLimit";
 
@@ -13,11 +14,7 @@ const categories = [
   { name: "🎵 Songs", icon: Music, color: "from-pink-500 to-purple-500", path: "/song" },
   { name: "🎞 Animated", icon: Palette, color: "from-cyan-500 to-blue-500", path: "/animated" },
   { name: "🧠 Quiz", icon: Brain, color: "from-yellow-500 to-amber-500", path: "/quiz" },
-  { name: "🤖 AI Chat", icon: MessageCircle, color: "from-emerald-500 to-teal-500", path: "/ai-chat" },
-  { name: "🎮 Games", icon: Gamepad2, color: "from-violet-500 to-purple-600", path: "/games" },
   { name: "🌐 Languages", icon: Globe, color: "from-blue-500 to-indigo-500", path: "/languages" },
-  { name: "💾 Saved", icon: Save, color: "from-amber-500 to-orange-500", path: "/saved" },
-  { name: "👤 Profile", icon: User, color: "from-indigo-500 to-purple-500", path: "/profile" },
   { name: "🏆 Leaderboard", icon: Trophy, color: "from-yellow-500 to-orange-500", path: "/leaderboard" },
   { name: "👑 VIP", icon: Crown, color: "from-yellow-400 to-amber-500", path: "/vip" },
   { name: "⚙ Settings", icon: Settings, color: "from-slate-400 to-slate-600", path: "/settings" },
@@ -25,13 +22,8 @@ const categories = [
 
 const Home = () => {
   const navigate = useNavigate();
-  const { user, profile, signOut } = useAuth();
+  const { user, profile } = useAuth();
   const { remaining, isVip } = useDailyLimit();
-
-  const handleLogout = async () => {
-    await signOut();
-    navigate("/");
-  };
 
   return (
     <div className="relative min-h-screen pb-24">
@@ -90,24 +82,7 @@ const Home = () => {
         </div>
       </div>
 
-      <motion.div initial={{ y: 80 }} animate={{ y: 0 }} transition={{ delay: 0.5, type: "spring" }} className="fixed bottom-0 left-0 right-0 z-50">
-        <div className="glass-strong border-t border-border/30 px-6 py-3">
-          <div className="max-w-4xl mx-auto flex items-center justify-around">
-            {[
-              { icon: HomeIcon, label: "Home", action: () => navigate("/home"), active: true },
-              { icon: User, label: "Profile", action: () => navigate("/profile"), active: false },
-              { icon: Trophy, label: "Ranks", action: () => navigate("/leaderboard"), active: false },
-              { icon: LogOut, label: "Logout", action: handleLogout, active: false },
-            ].map((item) => (
-              <button key={item.label} onClick={item.action}
-                className={`flex flex-col items-center gap-1 px-3 py-1 rounded-xl transition-colors ${item.active ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}>
-                <item.icon className="w-5 h-5" />
-                <span className="text-[10px] font-semibold">{item.label}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      </motion.div>
+      <BottomNav />
     </div>
   );
 };

@@ -9,6 +9,8 @@ interface AuthContext {
   profile: any;
   signUp: (email: string, password: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
+  signInWithOtp: (phone: string) => Promise<void>;
+  verifyOtp: (phone: string, token: string) => Promise<void>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
@@ -58,6 +60,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (error) throw error;
   };
 
+  const signInWithOtp = async (phone: string) => {
+    const { error } = await supabase.auth.signInWithOtp({ phone });
+    if (error) throw error;
+  };
+
+  const verifyOtp = async (phone: string, token: string) => {
+    const { error } = await supabase.auth.verifyOtp({ phone, token, type: "sms" });
+    if (error) throw error;
+  };
+
   const signOut = async () => {
     await supabase.auth.signOut();
   };
@@ -67,7 +79,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AuthCtx.Provider value={{ user, session, loading, profile, signUp, signIn, signOut, refreshProfile }}>
+    <AuthCtx.Provider value={{ user, session, loading, profile, signUp, signIn, signInWithOtp, verifyOtp, signOut, refreshProfile }}>
       {children}
     </AuthCtx.Provider>
   );
