@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft } from "lucide-react";
 import FloatingParticles from "./FloatingParticles";
+import BottomNav from "./BottomNav";
 
 interface PageShellProps {
   title: string;
@@ -15,7 +16,7 @@ const PageShell = ({ title, subtitle, icon, gradientClass, children }: PageShell
   const navigate = useNavigate();
 
   return (
-    <div className="relative min-h-screen pb-8">
+    <div className="relative min-h-screen pb-24">
       <FloatingParticles />
 
       {/* Top gradient accent */}
@@ -54,6 +55,8 @@ const PageShell = ({ title, subtitle, icon, gradientClass, children }: PageShell
           {children}
         </motion.div>
       </div>
+
+      <BottomNav />
     </div>
   );
 };
