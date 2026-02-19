@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Music, Sparkles, Loader2, Brain, PenLine, Download, Save } from "lucide-react";
+import VideoPlayerSection from "@/components/VideoPlayerSection";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import PageShell from "@/components/PageShell";
@@ -128,6 +129,8 @@ const Song = () => {
             Generate Song Lyrics
           </Button>
         </div>
+
+        <VideoPlayerSection topic={topic} language={language} type={songType} />
 
         {lyrics && (
           <>
