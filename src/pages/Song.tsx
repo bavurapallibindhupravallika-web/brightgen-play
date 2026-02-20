@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Music, Sparkles, Loader2, Brain, PenLine, Download, Save } from "lucide-react";
+import AIVoiceButton from "@/components/AIVoiceButton";
 import VideoPlayerSection from "@/components/VideoPlayerSection";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -92,7 +93,7 @@ const Song = () => {
   };
 
   return (
-    <PageShell title="Create Song" subtitle="Transform topics into catchy songs" icon={<Music className="w-7 h-7 text-foreground" />} gradientClass="from-pink-500 to-purple-500">
+    <PageShell title="Create Song" subtitle="Transform topics into catchy songs" icon={<Music className="w-7 h-7 text-foreground" />} gradientClass="from-pink-500 to-purple-500" theme="music">
       <div className="space-y-4">
         <div className="glass rounded-2xl p-3 flex items-center justify-between">
           <p className="text-xs text-muted-foreground">{isVip ? "💎 VIP – Unlimited" : `⚡ Free – ${remaining()} left today`}</p>
@@ -138,6 +139,7 @@ const Song = () => {
               <h3 className="text-foreground font-bold text-sm mb-3">🎵 Song Lyrics ({language})</h3>
               <div className="text-foreground text-sm whitespace-pre-wrap leading-relaxed">{lyrics}</div>
             </div>
+            <AIVoiceButton text={lyrics} language={language} />
             <div className="grid grid-cols-2 gap-3">
               <Button onClick={handleDownload} variant="outline" className="h-10 text-xs border-border/50 text-muted-foreground hover:text-foreground"><Download className="w-3 h-3 mr-1" /> Download</Button>
               <Button onClick={handleSave} variant="outline" className="h-10 text-xs border-border/50 text-muted-foreground hover:text-foreground"><Save className="w-3 h-3 mr-1" /> Save</Button>

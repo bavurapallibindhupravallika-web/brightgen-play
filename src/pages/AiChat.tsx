@@ -101,7 +101,7 @@ const AiChat = () => {
   };
 
   return (
-    <PageShell title="AI Assistant" subtitle="Ask any doubt, get instant help" icon={<MessageCircle className="w-7 h-7 text-foreground" />} gradientClass="from-emerald-500 to-teal-500">
+    <PageShell title="AI Assistant" subtitle="Ask any doubt, get instant help" icon={<MessageCircle className="w-7 h-7 text-foreground" />} gradientClass="from-emerald-500 to-teal-500" theme="tech">
       <div className="glass rounded-2xl flex flex-col" style={{ height: "65vh" }}>
         {/* Top bar */}
         <div className="flex items-center justify-between p-3 border-b border-border/30">
