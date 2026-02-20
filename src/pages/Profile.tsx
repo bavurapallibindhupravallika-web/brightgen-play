@@ -21,7 +21,7 @@ const Profile = () => {
   }, [user]);
 
   return (
-    <PageShell title="Profile" subtitle="Your learning dashboard" icon={<User className="w-7 h-7 text-foreground" />} gradientClass="from-indigo-500 to-purple-500">
+    <PageShell title="Profile" subtitle="Your learning dashboard" icon={<User className="w-7 h-7 text-foreground" />} gradientClass="from-indigo-500 to-purple-500" theme="space">
       <div className="space-y-4">
         <div className="glass rounded-2xl p-8 flex flex-col items-center">
           <div className="w-24 h-24 rounded-full bg-primary/20 flex items-center justify-center mb-4 neon-glow">

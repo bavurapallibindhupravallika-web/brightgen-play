@@ -26,7 +26,7 @@ const Languages = () => {
   const navigate = useNavigate();
 
   return (
-    <PageShell title="Language Practice" subtitle="Daily practice in 16 languages" icon={<Globe className="w-7 h-7 text-foreground" />} gradientClass="from-blue-500 to-indigo-500">
+    <PageShell title="Language Practice" subtitle="Daily practice in 16 languages" icon={<Globe className="w-7 h-7 text-foreground" />} gradientClass="from-blue-500 to-indigo-500" theme="library">
       <div className="space-y-4">
         <div className="glass rounded-2xl p-4">
           <h3 className="text-foreground font-bold text-sm mb-3">Select Language</h3>

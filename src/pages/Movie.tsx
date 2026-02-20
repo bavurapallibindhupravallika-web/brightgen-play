@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Film, Sparkles, Download, Loader2, Brain, PenLine, FileText, Save } from "lucide-react";
+import AIVoiceButton from "@/components/AIVoiceButton";
 import VideoPlayerSection from "@/components/VideoPlayerSection";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -95,7 +96,7 @@ const Movie = () => {
   };
 
   return (
-    <PageShell title="Create Movie" subtitle="Turn any topic into a cinematic experience" icon={<Film className="w-7 h-7 text-foreground" />} gradientClass="from-red-500 to-orange-500">
+    <PageShell title="Create Movie" subtitle="Turn any topic into a cinematic experience" icon={<Film className="w-7 h-7 text-foreground" />} gradientClass="from-red-500 to-orange-500" theme="cinema">
       <div className="space-y-4">
         {/* VIP / Limit Banner */}
         <div className="glass rounded-2xl p-3 flex items-center justify-between">
@@ -146,6 +147,7 @@ const Movie = () => {
               <h3 className="text-foreground font-bold text-sm mb-3">📜 Movie Script ({language})</h3>
               <div className="text-foreground text-sm whitespace-pre-wrap leading-relaxed">{script}</div>
             </div>
+            <AIVoiceButton text={script} language={language} />
             <div className="grid grid-cols-2 gap-3">
               <Button onClick={handleDownload} variant="outline" className="h-10 text-xs border-border/50 text-muted-foreground hover:text-foreground">
                 <Download className="w-3 h-3 mr-1" /> Download Script

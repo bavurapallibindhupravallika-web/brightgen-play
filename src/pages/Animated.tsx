@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Palette, Sparkles, Loader2, Brain, PenLine, Download, Save } from "lucide-react";
+import AIVoiceButton from "@/components/AIVoiceButton";
 import VideoPlayerSection from "@/components/VideoPlayerSection";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -92,7 +93,7 @@ const Animated = () => {
   };
 
   return (
-    <PageShell title="Animated Story" subtitle="Create engaging animated stories" icon={<Palette className="w-7 h-7 text-foreground" />} gradientClass="from-cyan-500 to-blue-500">
+    <PageShell title="Animated Story" subtitle="Create engaging animated stories" icon={<Palette className="w-7 h-7 text-foreground" />} gradientClass="from-cyan-500 to-blue-500" theme="neon">
       <div className="space-y-4">
         <div className="glass rounded-2xl p-3 flex items-center justify-between">
           <p className="text-xs text-muted-foreground">{isVip ? "💎 VIP – Unlimited" : `⚡ Free – ${remaining()} left today`}</p>
@@ -138,6 +139,7 @@ const Animated = () => {
               <h3 className="text-foreground font-bold text-sm mb-3">🎬 Animated Script ({language})</h3>
               <div className="text-foreground text-sm whitespace-pre-wrap leading-relaxed">{script}</div>
             </div>
+            <AIVoiceButton text={script} language={language} />
             <div className="grid grid-cols-2 gap-3">
               <Button onClick={handleDownload} variant="outline" className="h-10 text-xs border-border/50 text-muted-foreground hover:text-foreground"><Download className="w-3 h-3 mr-1" /> Download</Button>
               <Button onClick={handleSave} variant="outline" className="h-10 text-xs border-border/50 text-muted-foreground hover:text-foreground"><Save className="w-3 h-3 mr-1" /> Save</Button>
