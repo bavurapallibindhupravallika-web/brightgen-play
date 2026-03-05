@@ -6,7 +6,7 @@ export const useSaveContent = () => {
   const { user } = useAuth();
 
   const saveContent = async (params: {
-    content_type: "movie" | "song" | "animated";
+    content_type: string;
     title: string;
     topic: string;
     language: string;
