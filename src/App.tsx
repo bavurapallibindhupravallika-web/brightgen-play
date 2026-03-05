@@ -18,6 +18,9 @@ import Profile from "./pages/Profile";
 import Leaderboard from "./pages/Leaderboard";
 import Saved from "./pages/Saved";
 import VipUpgrade from "./pages/VipUpgrade";
+import Programming from "./pages/Programming";
+import DailyChallenge from "./pages/DailyChallenge";
+import LearningTopics from "./pages/LearningTopics";
 import NotFound from "./pages/NotFound";
 
 // Game gameplay pages (existing)
@@ -82,6 +85,9 @@ const App = () => (
             <Route path="/song" element={<Song />} />
             <Route path="/animated" element={<Animated />} />
             <Route path="/quiz" element={<Quiz />} />
+            <Route path="/programming" element={<Programming />} />
+            <Route path="/daily-challenge" element={<DailyChallenge />} />
+            <Route path="/learning-topics" element={<LearningTopics />} />
             <Route path="/ai-chat" element={<AiChat />} />
             <Route path="/games" element={<Games />} />
 
