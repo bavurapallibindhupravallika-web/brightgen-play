@@ -2,23 +2,25 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   BookOpen, Clapperboard, Gamepad2, Brain, MessageCircle,
-  Star, Flame, User, Crown, Settings, Trophy, Calendar
+  Star, Flame, User, Crown, Settings, Trophy, Calendar, Code, Globe
 } from "lucide-react";
-import FloatingParticles from "@/components/FloatingParticles";
+import IllustratedBackground from "@/components/IllustratedBackground";
 import BottomNav from "@/components/BottomNav";
 import { useAuth } from "@/hooks/useAuth";
 import { useDailyLimit } from "@/hooks/useDailyLimit";
 
 const cards = [
-  { name: "Continue Learning", emoji: "📚", icon: BookOpen, gradient: "from-blue-500 to-indigo-600", path: "/learn", desc: "Pick up where you left off" },
-  { name: "Story Studio", emoji: "🎬", icon: Clapperboard, gradient: "from-purple-500 to-fuchsia-500", path: "/story-studio", desc: "Create movies, songs & stories" },
-  { name: "Educational Games", emoji: "🎮", icon: Gamepad2, gradient: "from-pink-500 to-rose-500", path: "/games", desc: "Learn through play" },
-  { name: "AI Teacher", emoji: "🤖", icon: MessageCircle, gradient: "from-orange-400 to-amber-500", path: "/ai-chat", desc: "Ask anything, learn faster" },
-  { name: "Quiz Challenge", emoji: "🧠", icon: Brain, gradient: "from-teal-400 to-cyan-500", path: "/quiz", desc: "Test your knowledge" },
-  { name: "Daily Challenge", emoji: "📅", icon: Calendar, gradient: "from-emerald-400 to-green-500", path: "/daily-challenge", desc: "New challenge every day" },
-  { name: "Leaderboard", emoji: "🏆", icon: Trophy, gradient: "from-yellow-400 to-orange-500", path: "/leaderboard", desc: "Top learners" },
-  { name: "VIP Upgrade", emoji: "👑", icon: Crown, gradient: "from-amber-400 to-yellow-300", path: "/vip", desc: "Unlimited access" },
-  { name: "Settings", emoji: "⚙️", icon: Settings, gradient: "from-slate-400 to-gray-500", path: "/settings", desc: "Customize your app" },
+  { name: "Story Studio", emoji: "🎬", icon: Clapperboard, gradient: "from-[hsl(280_70%_60%)] to-[hsl(320_70%_55%)]", path: "/story-studio", desc: "Create movies, songs & stories" },
+  { name: "Educational Games", emoji: "🎮", icon: Gamepad2, gradient: "from-[hsl(150_60%_45%)] to-[hsl(170_55%_40%)]", path: "/games", desc: "Learn through play" },
+  { name: "AI Teacher", emoji: "🤖", icon: MessageCircle, gradient: "from-[hsl(200_70%_50%)] to-[hsl(220_65%_45%)]", path: "/ai-chat", desc: "Ask anything, learn faster" },
+  { name: "Quiz Challenge", emoji: "🧠", icon: Brain, gradient: "from-[hsl(30_80%_55%)] to-[hsl(15_75%_50%)]", path: "/quiz", desc: "Test your knowledge" },
+  { name: "Learning Topics", emoji: "📚", icon: BookOpen, gradient: "from-[hsl(260_65%_55%)] to-[hsl(240_60%_50%)]", path: "/learning-topics", desc: "Explore any subject" },
+  { name: "Languages", emoji: "🌍", icon: Globe, gradient: "from-[hsl(340_65%_55%)] to-[hsl(360_60%_50%)]", path: "/languages", desc: "Learn new languages" },
+  { name: "Programming", emoji: "💻", icon: Code, gradient: "from-[hsl(180_55%_40%)] to-[hsl(200_60%_35%)]", path: "/programming", desc: "Code like a pro" },
+  { name: "Daily Challenge", emoji: "📅", icon: Calendar, gradient: "from-[hsl(45_75%_50%)] to-[hsl(35_70%_45%)]", path: "/daily-challenge", desc: "New challenge every day" },
+  { name: "Leaderboard", emoji: "🏆", icon: Trophy, gradient: "from-[hsl(40_80%_55%)] to-[hsl(25_75%_50%)]", path: "/leaderboard", desc: "Top learners" },
+  { name: "VIP Upgrade", emoji: "👑", icon: Crown, gradient: "from-[hsl(50_85%_55%)] to-[hsl(40_80%_50%)]", path: "/vip", desc: "Unlimited access" },
+  { name: "Settings", emoji: "⚙️", icon: Settings, gradient: "from-[hsl(220_25%_55%)] to-[hsl(230_30%_45%)]", path: "/settings", desc: "Customize your app" },
 ];
 
 const Home = () => {
@@ -28,7 +30,7 @@ const Home = () => {
 
   return (
     <div className="relative min-h-screen pb-24">
-      <FloatingParticles />
+      <IllustratedBackground scene="dreamySky" />
       <div className="relative z-10 max-w-lg mx-auto px-4 pt-8">
         {/* Header */}
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
@@ -38,12 +40,12 @@ const Home = () => {
               <p className="text-muted-foreground text-sm mt-0.5">Your AI Learning Platform</p>
             </div>
             <div className="flex items-center gap-2">
-              <div className="glass rounded-full px-2.5 py-1 flex items-center gap-1 text-xs">
-                <Flame className="w-3.5 h-3.5 text-orange-400" />
+              <div className="bg-card/60 backdrop-blur-md rounded-full px-2.5 py-1 flex items-center gap-1 text-xs border border-border/30">
+                <Flame className="w-3.5 h-3.5 text-orange-500" />
                 <span className="text-foreground font-bold">{profile?.streak || 0}</span>
               </div>
-              <div className="glass rounded-full px-2.5 py-1 flex items-center gap-1 text-xs">
-                <Star className="w-3.5 h-3.5 text-yellow-400" />
+              <div className="bg-card/60 backdrop-blur-md rounded-full px-2.5 py-1 flex items-center gap-1 text-xs border border-border/30">
+                <Star className="w-3.5 h-3.5 text-yellow-500" />
                 <span className="text-foreground font-bold">{profile?.points || 0}</span>
               </div>
             </div>
@@ -55,21 +57,21 @@ const Home = () => {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="glass rounded-2xl p-4 mb-6 flex items-center justify-between"
+          className="bg-card/50 backdrop-blur-xl rounded-3xl p-4 mb-6 flex items-center justify-between border border-border/20 shadow-lg"
         >
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+            <div className="w-11 h-11 rounded-full bg-primary/20 flex items-center justify-center">
               <User className="w-5 h-5 text-primary" />
             </div>
             <div>
-              <p className="text-foreground font-semibold text-sm">{profile?.username || user?.email?.split("@")[0] || "Student"}</p>
+              <p className="text-foreground font-bold text-sm">{profile?.username || user?.email?.split("@")[0] || "Student"}</p>
               <p className="text-muted-foreground text-xs">
                 {isVip ? "💎 VIP · Unlimited" : `Free · ${remaining()} items today`}
               </p>
             </div>
           </div>
           {!isVip && (
-            <button onClick={() => navigate("/vip")} className="text-xs font-bold text-primary glass rounded-full px-3 py-1.5 hover:bg-primary/10 transition-colors">
+            <button onClick={() => navigate("/vip")} className="text-xs font-bold text-primary bg-primary/10 rounded-full px-3 py-1.5 hover:bg-primary/20 transition-colors">
               Upgrade
             </button>
           )}
@@ -86,17 +88,17 @@ const Home = () => {
               whileHover={{ scale: 1.03, y: -2 }}
               whileTap={{ scale: 0.97 }}
               onClick={() => navigate(card.path)}
-              className="relative rounded-2xl p-4 text-left overflow-hidden group"
+              className="relative rounded-3xl p-4 text-left overflow-hidden group shadow-lg"
             >
               {/* Gradient BG */}
-              <div className={`absolute inset-0 bg-gradient-to-br ${card.gradient} opacity-15 group-hover:opacity-25 transition-opacity duration-300`} />
-              <div className="absolute inset-0 glass" />
+              <div className={`absolute inset-0 bg-gradient-to-br ${card.gradient} opacity-90`} />
+              <div className="absolute inset-0 bg-white/10" />
               <div className="relative z-10">
-                <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${card.gradient} flex items-center justify-center mb-2.5 shadow-lg`}>
-                  <card.icon className="w-5 h-5 text-white" />
+                <div className="w-11 h-11 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center mb-2.5">
+                  <span className="text-xl">{card.emoji}</span>
                 </div>
-                <h3 className="text-foreground font-bold text-sm leading-tight">{card.name}</h3>
-                <p className="text-muted-foreground text-[10px] mt-0.5 leading-snug">{card.desc}</p>
+                <h3 className="text-white font-bold text-sm leading-tight">{card.name}</h3>
+                <p className="text-white/70 text-[10px] mt-0.5 leading-snug">{card.desc}</p>
               </div>
             </motion.button>
           ))}
