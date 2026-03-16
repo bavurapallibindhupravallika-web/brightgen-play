@@ -22,6 +22,8 @@ import Programming from "./pages/Programming";
 import DailyChallenge from "./pages/DailyChallenge";
 import LearningTopics from "./pages/LearningTopics";
 import NotFound from "./pages/NotFound";
+import StoryStudio from "./pages/StoryStudio";
+import Learn from "./pages/Learn";
 
 // Game gameplay pages (existing)
 import WordPuzzle from "./pages/games/WordPuzzle";
@@ -89,6 +91,8 @@ const App = () => (
             <Route path="/daily-challenge" element={<DailyChallenge />} />
             <Route path="/learning-topics" element={<LearningTopics />} />
             <Route path="/ai-chat" element={<AiChat />} />
+            <Route path="/story-studio" element={<StoryStudio />} />
+            <Route path="/learn" element={<Learn />} />
             <Route path="/games" element={<Games />} />
 
             {/* ── Game Home pages ── */}

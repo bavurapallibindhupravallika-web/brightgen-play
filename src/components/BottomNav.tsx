@@ -1,11 +1,11 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { Home, Gamepad2, MessageCircle, Save, User } from "lucide-react";
+import { Home, BookOpen, Clapperboard, Gamepad2, User } from "lucide-react";
 
 const tabs = [
   { icon: Home, label: "Home", path: "/home" },
+  { icon: BookOpen, label: "Learn", path: "/learn" },
+  { icon: Clapperboard, label: "Studio", path: "/story-studio" },
   { icon: Gamepad2, label: "Games", path: "/games" },
-  { icon: MessageCircle, label: "AI", path: "/ai-chat" },
-  { icon: Save, label: "Saved", path: "/saved" },
   { icon: User, label: "Profile", path: "/profile" },
 ];
 
