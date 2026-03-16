@@ -22,6 +22,8 @@ import Programming from "./pages/Programming";
 import DailyChallenge from "./pages/DailyChallenge";
 import LearningTopics from "./pages/LearningTopics";
 import NotFound from "./pages/NotFound";
+import StoryStudio from "./pages/StoryStudio";
+import Learn from "./pages/Learn";
 
 // Game gameplay pages (existing)
 import WordPuzzle from "./pages/games/WordPuzzle";
