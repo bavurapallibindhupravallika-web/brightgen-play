@@ -91,6 +91,8 @@ const App = () => (
             <Route path="/daily-challenge" element={<DailyChallenge />} />
             <Route path="/learning-topics" element={<LearningTopics />} />
             <Route path="/ai-chat" element={<AiChat />} />
+            <Route path="/story-studio" element={<StoryStudio />} />
+            <Route path="/learn" element={<Learn />} />
             <Route path="/games" element={<Games />} />
 
             {/* ── Game Home pages ── */}
