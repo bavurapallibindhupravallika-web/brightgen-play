@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Clapperboard, Loader2, Download, X } from "lucide-react";
+import { Clapperboard, Loader2, Download, X, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
@@ -18,30 +18,44 @@ const AIVideoGenerator = ({ topic }: AIVideoGeneratorProps) => {
     }
     setLoading(true);
     setVideoUrl(null);
-    try {
-      const resp = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-video`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-          },
-          body: JSON.stringify({ topic }),
+
+    const maxRetries = 3;
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const resp = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-video`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            },
+            body: JSON.stringify({ topic }),
+          }
+        );
+
+        if (resp.status === 503) {
+          toast.info(`Model is loading... retrying (${attempt}/${maxRetries})`);
+          await new Promise((r) => setTimeout(r, 30000));
+          continue;
         }
-      );
 
-      if (!resp.ok) {
-        const err = await resp.json();
-        throw new Error(err.error || "Video generation failed");
+        if (!resp.ok) {
+          const err = await resp.json();
+          throw new Error(err.error || "Video generation failed");
+        }
+
+        const blob = await resp.blob();
+        const url = URL.createObjectURL(blob);
+        setVideoUrl(url);
+        toast.success("Video generated!");
+        setLoading(false);
+        return;
+      } catch (e: any) {
+        if (attempt === maxRetries) {
+          toast.error(e.message || "Failed to generate video");
+        }
       }
-
-      const blob = await resp.blob();
-      const url = URL.createObjectURL(blob);
-      setVideoUrl(url);
-      toast.success("Video generated!");
-    } catch (e: any) {
-      toast.error(e.message || "Failed to generate video");
     }
     setLoading(false);
   };
@@ -69,9 +83,6 @@ const AIVideoGenerator = ({ topic }: AIVideoGeneratorProps) => {
         )}
         🎬 Generate AI Video
       </Button>
-      <p className="text-[10px] text-muted-foreground text-center">
-        Requires fal-ai credits on your Hugging Face account
-      </p>
 
       {loading && (
         <div className="glass rounded-2xl p-8 text-center space-y-4">
@@ -85,7 +96,7 @@ const AIVideoGenerator = ({ topic }: AIVideoGeneratorProps) => {
               StudyFlix is directing your movie...
             </p>
             <p className="text-muted-foreground text-xs mt-1">
-              This may take 1-3 minutes
+              This may take 1-3 minutes. Model may need to warm up.
             </p>
           </div>
         </div>
