@@ -12,9 +12,9 @@ serve(async (req) => {
   }
 
   try {
-    const HF_TOKEN = Deno.env.get("HF_TOKEN");
-    if (!HF_TOKEN) {
-      throw new Error("HF_TOKEN is not configured");
+    const REPLICATE_API_TOKEN = Deno.env.get("REPLICATE_API_TOKEN");
+    if (!REPLICATE_API_TOKEN) {
+      throw new Error("REPLICATE_API_TOKEN is not configured");
     }
 
     const { topic } = await req.json();
@@ -24,35 +24,75 @@ serve(async (req) => {
 
     const prompt = `A high-quality 3D cinematic study animation movie about ${topic}`;
 
-    // Use the free HF Inference provider — no paid credits needed
-    const url = "https://router.huggingface.co/hf-inference/models/ali-vilab/text-to-video-ms-1.7b";
-
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${HF_TOKEN}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ inputs: prompt }),
-    });
-
-    if (!response.ok) {
-      const errText = await response.text();
-      // If model is loading, tell the user to retry
-      if (response.status === 503) {
-        return new Response(
-          JSON.stringify({ error: "Model is loading, please try again in ~30 seconds.", loading: true }),
-          { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+    // Create prediction using Replicate's model-based endpoint
+    const createResp = await fetch(
+      "https://api.replicate.com/v1/models/minimax/video-01-live/predictions",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${REPLICATE_API_TOKEN}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          input: {
+            prompt,
+            prompt_optimizer: true,
+          },
+        }),
       }
-      throw new Error(`HF Inference error [${response.status}]: ${errText}`);
+    );
+
+    if (!createResp.ok) {
+      const errText = await createResp.text();
+      throw new Error(`Replicate create error [${createResp.status}]: ${errText}`);
     }
 
-    const videoBlob = await response.arrayBuffer();
+    const prediction = await createResp.json();
+    console.log("Prediction created:", prediction.id, prediction.status);
 
-    return new Response(videoBlob, {
-      headers: { ...corsHeaders, "Content-Type": "video/mp4" },
-    });
+    const getUrl = prediction.urls?.get;
+    if (!getUrl) {
+      throw new Error("No get URL in prediction response");
+    }
+
+    // Poll for completion (max ~5 minutes)
+    for (let i = 0; i < 60; i++) {
+      await new Promise((r) => setTimeout(r, 5000));
+
+      const pollResp = await fetch(getUrl, {
+        headers: { Authorization: `Bearer ${REPLICATE_API_TOKEN}` },
+      });
+
+      if (!pollResp.ok) {
+        const pollErr = await pollResp.text();
+        console.error(`Poll error: ${pollErr}`);
+        continue;
+      }
+
+      const pollData = await pollResp.json();
+      console.log(`Poll ${i + 1}: status=${pollData.status}`);
+
+      if (pollData.status === "failed" || pollData.status === "canceled") {
+        throw new Error("Generation failed: " + (pollData.error || "Unknown error"));
+      }
+
+      if (pollData.status === "succeeded") {
+        // Output is typically a URL string or array of URLs
+        const videoUrl = Array.isArray(pollData.output) ? pollData.output[0] : pollData.output;
+        if (!videoUrl) {
+          throw new Error("No video URL in output");
+        }
+
+        // Download and return the video
+        const videoResp = await fetch(videoUrl);
+        const videoBlob = await videoResp.arrayBuffer();
+        return new Response(videoBlob, {
+          headers: { ...corsHeaders, "Content-Type": "video/mp4" },
+        });
+      }
+    }
+
+    throw new Error("Video generation timed out after 5 minutes");
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Unknown error";
     console.error("generate-video error:", message);
