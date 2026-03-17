@@ -23,32 +23,92 @@ serve(async (req) => {
     }
 
     const prompt = `A high-quality 3D cinematic study animation movie about ${topic}`;
+    const headers = {
+      Authorization: `Bearer ${HF_TOKEN}`,
+      "Content-Type": "application/json",
+    };
 
-    const response = await fetch(
-      "https://router.huggingface.co/hf-inference/models/ali-vilab/text-to-video-ms-1.7b",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${HF_TOKEN}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ inputs: prompt }),
-      }
-    );
+    // Use Wan2.1-T2V-1.3B (smaller, faster model) via fal-ai provider on HF router
+    // providerId from HF mapping: fal-ai/wan/v2.1/1.3b/text-to-video
+    const submitUrl = "https://router.huggingface.co/fal-ai/wan/v2.1/1.3b/text-to-video?_subdomain=queue";
+    
+    const submitResp = await fetch(submitUrl, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ prompt }),
+    });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Hugging Face API error [${response.status}]: ${errorText}`);
+    const submitText = await submitResp.text();
+    console.log("Submit status:", submitResp.status, "body:", submitText);
+
+    if (!submitResp.ok) {
+      throw new Error(`HF API [${submitResp.status}]: ${submitText}`);
     }
 
-    const videoBlob = await response.arrayBuffer();
+    const submitData = JSON.parse(submitText);
+    const requestId = submitData.request_id;
+    if (!requestId) {
+      // Maybe we got the result directly
+      const videoUrl = submitData?.video?.url;
+      if (videoUrl) {
+        const videoResp = await fetch(videoUrl);
+        const videoBlob = await videoResp.arrayBuffer();
+        return new Response(videoBlob, {
+          headers: { ...corsHeaders, "Content-Type": "video/mp4" },
+        });
+      }
+      throw new Error("No request_id: " + submitText);
+    }
 
-    return new Response(videoBlob, {
-      headers: {
-        ...corsHeaders,
-        "Content-Type": "video/mp4",
-      },
-    });
+    // Extract provider model path from response_url
+    const responseUrl = submitData.response_url;
+    let statusPath: string;
+    let resultPath: string;
+    
+    if (responseUrl) {
+      const parsed = new URL(responseUrl);
+      statusPath = `https://router.huggingface.co/fal-ai${parsed.pathname}/status?_subdomain=queue`;
+      resultPath = `https://router.huggingface.co/fal-ai${parsed.pathname}?_subdomain=queue`;
+    } else {
+      statusPath = `https://router.huggingface.co/fal-ai/wan/v2.1/1.3b/text-to-video/requests/${requestId}/status?_subdomain=queue`;
+      resultPath = `https://router.huggingface.co/fal-ai/wan/v2.1/1.3b/text-to-video/requests/${requestId}?_subdomain=queue`;
+    }
+
+    console.log("Polling status at:", statusPath);
+
+    // Poll for up to 5 minutes
+    for (let i = 0; i < 60; i++) {
+      await new Promise((r) => setTimeout(r, 5000));
+
+      const pollResp = await fetch(statusPath, { headers });
+      const pollText = await pollResp.text();
+      console.log(`Poll ${i + 1}: status=${pollResp.status} body=${pollText}`);
+
+      if (!pollResp.ok) continue;
+
+      const pollData = JSON.parse(pollText);
+
+      if (pollData.status === "FAILED") {
+        throw new Error("Generation failed: " + pollText);
+      }
+
+      if (pollData.status === "COMPLETED") {
+        const resultResp = await fetch(resultPath, { headers });
+        const resultData = await resultResp.json();
+        console.log("Result:", JSON.stringify(resultData));
+
+        const videoUrl = resultData?.video?.url;
+        if (!videoUrl) throw new Error("No video URL in result");
+
+        const videoResp = await fetch(videoUrl);
+        const videoBlob = await videoResp.arrayBuffer();
+        return new Response(videoBlob, {
+          headers: { ...corsHeaders, "Content-Type": "video/mp4" },
+        });
+      }
+    }
+
+    throw new Error("Timed out after 5 minutes");
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Unknown error";
     console.error("generate-video error:", message);
