@@ -140,6 +140,7 @@ const Movie = () => {
           </Button>
         </div>
 
+        <AIVideoGenerator topic={topic} />
         <VideoPlayerSection topic={topic} language={language} type={movieType} />
 
         {script && (
