@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Film, Sparkles, Download, Loader2, Brain, PenLine, FileText, Save } from "lucide-react";
 import AIVoiceButton from "@/components/AIVoiceButton";
 import VideoPlayerSection from "@/components/VideoPlayerSection";
+import AIVideoGenerator from "@/components/AIVideoGenerator";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import PageShell from "@/components/PageShell";
