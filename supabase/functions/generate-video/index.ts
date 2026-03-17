@@ -6,6 +6,9 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+const FAL_PROVIDER_MODEL = "fal-ai/hunyuan-video";
+const HF_ROUTER_BASE = "https://router.huggingface.co";
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -23,76 +26,81 @@ serve(async (req) => {
     }
 
     const prompt = `A high-quality 3D cinematic study animation movie about ${topic}`;
+    const authHeaders = {
+      Authorization: `Bearer ${HF_TOKEN}`,
+      "Content-Type": "application/json",
+    };
 
-    // Use the fal-ai provider for text-to-video via HF router
-    const submitResponse = await fetch(
-      "https://router.huggingface.co/fal-ai/models/tencent/HunyuanVideo",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${HF_TOKEN}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ inputs: prompt }),
-      }
-    );
+    // Submit to fal-ai queue via HF router
+    const submitUrl = `${HF_ROUTER_BASE}/${FAL_PROVIDER_MODEL}?_subdomain=queue`;
+    console.log("Submitting to:", submitUrl);
 
-    if (!submitResponse.ok) {
-      const errorText = await submitResponse.text();
-      throw new Error(`HF API error [${submitResponse.status}]: ${errorText}`);
+    const submitResp = await fetch(submitUrl, {
+      method: "POST",
+      headers: authHeaders,
+      body: JSON.stringify({ prompt }),
+    });
+
+    if (!submitResp.ok) {
+      const errText = await submitResp.text();
+      throw new Error(`Submit error [${submitResp.status}]: ${errText}`);
     }
 
-    // Check if we got a direct response (binary) or a polling URL
-    const contentType = submitResponse.headers.get("content-type") || "";
-    
-    if (contentType.includes("video") || contentType.includes("octet-stream")) {
-      // Direct binary response
-      const videoBlob = await submitResponse.arrayBuffer();
-      return new Response(videoBlob, {
-        headers: { ...corsHeaders, "Content-Type": "video/mp4" },
-      });
+    const submitData = await submitResp.json();
+    console.log("Submit response:", JSON.stringify(submitData));
+
+    const requestId = submitData.request_id;
+    if (!requestId) {
+      throw new Error("No request_id in submit response: " + JSON.stringify(submitData));
     }
 
-    // Async polling response
-    const submitData = await submitResponse.json();
-    const statusUrl = submitData.status_url || submitData.url;
+    // Extract the provider model path from response_url for status/result polling
+    const responseUrl = submitData.response_url || "";
+    const providerModelPath = responseUrl ? new URL(responseUrl).pathname : `/${FAL_PROVIDER_MODEL}/requests/${requestId}`;
 
-    if (!statusUrl) {
-      // Response might contain the video URL directly
-      if (submitData.video?.url || submitData[0]?.url) {
-        const videoUrl = submitData.video?.url || submitData[0]?.url;
-        const videoResp = await fetch(videoUrl);
-        const videoBlob = await videoResp.arrayBuffer();
-        return new Response(videoBlob, {
-          headers: { ...corsHeaders, "Content-Type": "video/mp4" },
-        });
-      }
-      throw new Error("No status URL or video in response: " + JSON.stringify(submitData));
-    }
+    const statusUrl = `${HF_ROUTER_BASE}/fal-ai${providerModelPath}/status?_subdomain=queue`;
+    const resultUrl = `${HF_ROUTER_BASE}/fal-ai${providerModelPath}?_subdomain=queue`;
+
+    console.log("Status URL:", statusUrl);
+    console.log("Result URL:", resultUrl);
 
     // Poll for completion (max ~5 minutes)
     for (let i = 0; i < 60; i++) {
       await new Promise((r) => setTimeout(r, 5000));
 
-      const pollResp = await fetch(statusUrl, {
-        headers: { Authorization: `Bearer ${HF_TOKEN}` },
-      });
-
+      const pollResp = await fetch(statusUrl, { headers: authHeaders });
       if (!pollResp.ok) {
         const pollErr = await pollResp.text();
-        throw new Error(`Poll error [${pollResp.status}]: ${pollErr}`);
+        console.error(`Poll error [${pollResp.status}]:`, pollErr);
+        // Continue polling on transient errors
+        continue;
       }
 
       const pollData = await pollResp.json();
-      
-      if (pollData.status === "failed" || pollData.error) {
-        throw new Error("Generation failed: " + (pollData.error || "Unknown"));
+      console.log(`Poll ${i + 1}:`, JSON.stringify(pollData));
+
+      if (pollData.status === "FAILED") {
+        throw new Error("Generation failed: " + JSON.stringify(pollData));
       }
 
-      if (pollData.status === "completed" || pollData.video?.url || pollData[0]?.url) {
-        const videoUrl = pollData.video?.url || pollData[0]?.url || pollData.output?.video?.url;
-        if (!videoUrl) throw new Error("No video URL in completed response");
-        
+      if (pollData.status === "COMPLETED") {
+        // Fetch the result
+        const resultResp = await fetch(resultUrl, { headers: authHeaders });
+        if (!resultResp.ok) {
+          const resultErr = await resultResp.text();
+          throw new Error(`Result fetch error [${resultResp.status}]: ${resultErr}`);
+        }
+
+        const resultData = await resultResp.json();
+        console.log("Result data:", JSON.stringify(resultData));
+
+        // Extract video URL from result
+        const videoUrl = resultData?.video?.url || resultData?.output?.video?.url;
+        if (!videoUrl) {
+          throw new Error("No video URL in result: " + JSON.stringify(resultData));
+        }
+
+        // Download the video and return it
         const videoResp = await fetch(videoUrl);
         const videoBlob = await videoResp.arrayBuffer();
         return new Response(videoBlob, {
