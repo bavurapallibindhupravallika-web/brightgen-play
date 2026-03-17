@@ -25,7 +25,7 @@ serve(async (req) => {
     const prompt = `A high-quality 3D cinematic study animation movie about ${topic}`;
 
     const response = await fetch(
-      "https://api-inference.huggingface.co/models/ali-vilab/text-to-video-ms-1.7b",
+      "https://router.huggingface.co/hf-inference/models/ali-vilab/text-to-video-ms-1.7b",
       {
         method: "POST",
         headers: {
