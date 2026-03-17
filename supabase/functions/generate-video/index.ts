@@ -6,9 +6,6 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-const FAL_PROVIDER_MODEL = "fal-ai/hunyuan-video";
-const HF_ROUTER_BASE = "https://router.huggingface.co";
-
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -26,81 +23,83 @@ serve(async (req) => {
     }
 
     const prompt = `A high-quality 3D cinematic study animation movie about ${topic}`;
-    const authHeaders = {
+    const headers = {
       Authorization: `Bearer ${HF_TOKEN}`,
       "Content-Type": "application/json",
     };
 
-    // Submit to fal-ai queue via HF router
-    const submitUrl = `${HF_ROUTER_BASE}/${FAL_PROVIDER_MODEL}?_subdomain=queue`;
-    console.log("Submitting to:", submitUrl);
-
+    // Use Wan2.1-T2V-1.3B (smaller, faster model) via fal-ai provider on HF router
+    // providerId from HF mapping: fal-ai/wan/v2.1/1.3b/text-to-video
+    const submitUrl = "https://router.huggingface.co/fal-ai/wan/v2.1/1.3b/text-to-video?_subdomain=queue";
+    
     const submitResp = await fetch(submitUrl, {
       method: "POST",
-      headers: authHeaders,
+      headers,
       body: JSON.stringify({ prompt }),
     });
 
+    const submitText = await submitResp.text();
+    console.log("Submit status:", submitResp.status, "body:", submitText);
+
     if (!submitResp.ok) {
-      const errText = await submitResp.text();
-      throw new Error(`Hugging Face API error [${submitResp.status}]: ${errText}`);
+      throw new Error(`HF API [${submitResp.status}]: ${submitText}`);
     }
 
-    const submitData = await submitResp.json();
-    console.log("Submit response:", JSON.stringify(submitData));
-
+    const submitData = JSON.parse(submitText);
     const requestId = submitData.request_id;
     if (!requestId) {
-      throw new Error("No request_id in submit response: " + JSON.stringify(submitData));
+      // Maybe we got the result directly
+      const videoUrl = submitData?.video?.url;
+      if (videoUrl) {
+        const videoResp = await fetch(videoUrl);
+        const videoBlob = await videoResp.arrayBuffer();
+        return new Response(videoBlob, {
+          headers: { ...corsHeaders, "Content-Type": "video/mp4" },
+        });
+      }
+      throw new Error("No request_id: " + submitText);
     }
 
-    // Extract the provider model path from response_url for status/result polling
-    const responseUrl = submitData.response_url || "";
-    const providerModelPath = responseUrl ? new URL(responseUrl).pathname : `/${FAL_PROVIDER_MODEL}/requests/${requestId}`;
+    // Extract provider model path from response_url
+    const responseUrl = submitData.response_url;
+    let statusPath: string;
+    let resultPath: string;
+    
+    if (responseUrl) {
+      const parsed = new URL(responseUrl);
+      statusPath = `https://router.huggingface.co/fal-ai${parsed.pathname}/status?_subdomain=queue`;
+      resultPath = `https://router.huggingface.co/fal-ai${parsed.pathname}?_subdomain=queue`;
+    } else {
+      statusPath = `https://router.huggingface.co/fal-ai/wan/v2.1/1.3b/text-to-video/requests/${requestId}/status?_subdomain=queue`;
+      resultPath = `https://router.huggingface.co/fal-ai/wan/v2.1/1.3b/text-to-video/requests/${requestId}?_subdomain=queue`;
+    }
 
-    const statusUrl = `${HF_ROUTER_BASE}/fal-ai${providerModelPath}/status?_subdomain=queue`;
-    const resultUrl = `${HF_ROUTER_BASE}/fal-ai${providerModelPath}?_subdomain=queue`;
+    console.log("Polling status at:", statusPath);
 
-    console.log("Status URL:", statusUrl);
-    console.log("Result URL:", resultUrl);
-
-    // Poll for completion (max ~5 minutes)
+    // Poll for up to 5 minutes
     for (let i = 0; i < 60; i++) {
       await new Promise((r) => setTimeout(r, 5000));
 
-      const pollResp = await fetch(statusUrl, { headers: authHeaders });
-      if (!pollResp.ok) {
-        const pollErr = await pollResp.text();
-        console.error(`Poll error [${pollResp.status}]:`, pollErr);
-        // Continue polling on transient errors
-        continue;
-      }
+      const pollResp = await fetch(statusPath, { headers });
+      const pollText = await pollResp.text();
+      console.log(`Poll ${i + 1}: status=${pollResp.status} body=${pollText}`);
 
-      const pollData = await pollResp.json();
-      console.log(`Poll ${i + 1}:`, JSON.stringify(pollData));
+      if (!pollResp.ok) continue;
+
+      const pollData = JSON.parse(pollText);
 
       if (pollData.status === "FAILED") {
-        throw new Error("Generation failed: " + JSON.stringify(pollData));
+        throw new Error("Generation failed: " + pollText);
       }
 
       if (pollData.status === "COMPLETED") {
-        // Fetch the result
-        const resultResp = await fetch(resultUrl, { headers: authHeaders });
-        if (!resultResp.ok) {
-          const resultErr = await resultResp.text();
-          throw new Error(`Result fetch error [${resultResp.status}]: ${resultErr}`);
-        }
-
+        const resultResp = await fetch(resultPath, { headers });
         const resultData = await resultResp.json();
-        console.log("Result data:", JSON.stringify(resultData));
+        console.log("Result:", JSON.stringify(resultData));
 
-        // Extract video URL from result
-        const videoUrl = resultData?.video?.url || resultData?.output?.video?.url;
-        if (!videoUrl) {
-          throw new Error("No video URL in result: " + JSON.stringify(resultData));
-        }
+        const videoUrl = resultData?.video?.url;
+        if (!videoUrl) throw new Error("No video URL in result");
 
-        // Download the video and return it
         const videoResp = await fetch(videoUrl);
         const videoBlob = await videoResp.arrayBuffer();
         return new Response(videoBlob, {
@@ -109,7 +108,7 @@ serve(async (req) => {
       }
     }
 
-    throw new Error("Video generation timed out after 5 minutes");
+    throw new Error("Timed out after 5 minutes");
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Unknown error";
     console.error("generate-video error:", message);
