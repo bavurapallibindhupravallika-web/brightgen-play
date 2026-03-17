@@ -43,7 +43,7 @@ serve(async (req) => {
 
     if (!submitResp.ok) {
       const errText = await submitResp.text();
-      throw new Error(`Submit error [${submitResp.status}]: ${errText}`);
+      throw new Error(`Hugging Face API error [${submitResp.status}]: ${errText}`);
     }
 
     const submitData = await submitResp.json();
