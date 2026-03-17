@@ -24,30 +24,44 @@ serve(async (req) => {
 
     const prompt = `A high-quality 3D cinematic study animation movie about ${topic}`;
 
-    // Create prediction using Replicate's model-based endpoint
-    const createResp = await fetch(
-      "https://api.replicate.com/v1/models/minimax/video-01-live/predictions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${REPLICATE_API_TOKEN}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          input: {
-            prompt,
-            prompt_optimizer: true,
+    // Create prediction with retry for rate limits
+    let prediction: any;
+    for (let retry = 0; retry < 3; retry++) {
+      const createResp = await fetch(
+        "https://api.replicate.com/v1/models/minimax/video-01-live/predictions",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${REPLICATE_API_TOKEN}`,
+            "Content-Type": "application/json",
           },
-        }),
-      }
-    );
+          body: JSON.stringify({
+            input: {
+              prompt,
+              prompt_optimizer: true,
+            },
+          }),
+        }
+      );
 
-    if (!createResp.ok) {
-      const errText = await createResp.text();
-      throw new Error(`Replicate create error [${createResp.status}]: ${errText}`);
+      if (createResp.status === 429) {
+        console.log("Rate limited, waiting 15s...");
+        await new Promise((r) => setTimeout(r, 15000));
+        continue;
+      }
+
+      if (!createResp.ok) {
+        const errText = await createResp.text();
+        throw new Error(`Replicate error [${createResp.status}]: ${errText}`);
+      }
+
+      prediction = await createResp.json();
+      break;
     }
 
-    const prediction = await createResp.json();
+    if (!prediction) {
+      throw new Error("Failed after retries — rate limited. Please try again in a minute.");
+    }
     console.log("Prediction created:", prediction.id, prediction.status);
 
     const getUrl = prediction.urls?.get;
