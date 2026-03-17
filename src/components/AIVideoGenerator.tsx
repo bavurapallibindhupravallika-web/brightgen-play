@@ -69,6 +69,9 @@ const AIVideoGenerator = ({ topic }: AIVideoGeneratorProps) => {
         )}
         🎬 Generate AI Video
       </Button>
+      <p className="text-[10px] text-muted-foreground text-center">
+        Requires fal-ai credits on your Hugging Face account
+      </p>
 
       {loading && (
         <div className="glass rounded-2xl p-8 text-center space-y-4">
